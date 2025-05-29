@@ -1,0 +1,9 @@
+stateDiagram-v2
+    [*] --> Apagada
+    Apagada --> Monitoreando : Encender pulsera
+    Monitoreando --> AlertaDesvio : Desvio detectado
+    Monitoreando --> AlertaInactividad : Inactividad detectada
+    Monitoreando --> ModoEmergencia : Boton de panico pulsado
+    AlertaDesvio --> Monitoreando : Ruta corregida
+    AlertaInactividad --> Monitoreando : Actividad reanudada
+    ModoEmergencia --> Apagada : Emergencia gestionada

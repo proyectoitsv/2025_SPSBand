@@ -1,12 +1,16 @@
----
-config:
-      theme: redux
----
 flowchart TD
-    A(["inicio"])
-    A --> B{"Medimos signos vitales"}
-    B --> C{"alguna anomalia"}
-    C --> D["si"]
-    D --> F["llamamos a urgencias"]
-    C --> E["no"]
-    E --> B
+    A((Inicio)) --> B[Registro de visitante]
+    B --> C[Entrega de pulsera]
+    C --> D[Pulsera Encendida / Monitoreando]
+    D --> E{Desvío de ruta?}
+    E -- Sí --> F[Alerta de Desvío]
+    E -- No --> G{Inactividad prolongada?}
+    G -- Sí --> H[Alerta de Inactividad]
+    G -- No --> D
+    D --> I{Botón de pánico presionado?}
+    I -- Sí --> J[Alerta de Emergencia]
+    I -- No --> D
+    F --> K[Notificar Personal del Parque]
+    H --> K
+    J --> K
+    K --> L[Finalizar recorrido]

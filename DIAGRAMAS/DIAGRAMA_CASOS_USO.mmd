@@ -1,0 +1,10 @@
+%%{ init: { "theme": "default" } }%%
+graph TD
+    Visitante([Visitante])
+    Personal["Personal del Parque"]
+    Visitante --> Registrarse(Registrarse)
+    Visitante --> UsarPulsera(Usar pulsera)
+    Visitante --> EnviarAlerta(Enviar alerta de pánico)
+    Personal --> RegistrarVisitante(Registrar visitante)
+    Personal --> SupervisarRecorrido(Supervisar recorrido)
+    Personal --> RecibirAlertas(Recibir alertas)
