@@ -1,0 +1,12 @@
+---
+config:
+      theme: redux
+---
+flowchart TD
+    A(["inicio"])
+    A --> B{"Medimos signos vitales"}
+    B --> C{"alguna anomalia"}
+    C --> D["si"]
+    D --> F["llamamos a urgencias"]
+    C --> E["no"]
+    E --> B
