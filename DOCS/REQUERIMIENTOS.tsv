@@ -1,0 +1,12 @@
+ID	Categoría	Elemento	Descripción	Tipo (HW/FW)	Prioridad	Comentarios	Columna 1
+REQ-FW-01	Fimware	Comunicacion	Envio de la ubicacion cada 30 minutos,para establecer un recorrido en el servidor	FW	Alta	No más frecuente porque la comunicación implica un gran uso de energía	
+REQ-FW-02	Fimware	Pulsómetro	Precisión requerida para la concentración de ppm y O2 ​en sangre. 	FW	Media	Permite conocer los datos vitales del usuario	FALSE
+REQ-FW-03	Fimware	Sensado	El dispositivo debe leer todos los sensores cada 30 minutos	FW	Media	Al igual que la comunicación, implica un consumo significativo además del tiempo adecuado para llevar un rastreo eficiente	
+REQ-FW-04	Fimware	Estacion terrena	Interfaz grafica que muestre la ubicacion exacta de cada dispositivo,su estado actual y la respectiva informacion de usuario	FW	Media	Tiene que dar una facilidad para leer y observar todos los datos, asi cualquier usuario lo puede entender, técnico o no	FALSE
+REQ-GEN-01	Genral	-	-	HW	Alta	Debe funcionar con baterias	FALSE
+REQ-GEN-02	Genral	Energía	Determinar el ahorro/carga de batería mediante células solares	HW	Baja	Brindaría una pequeña durabilidad adicional de funcionamiento	
+REQ-HW-01	Hardware	Microcontrolador 	Debe ser reducido en su tamaño ; un bajo consumo ; compatibilidad con 4G	HW	Alta	Compatible con Deep Sleep	FALSE
+REQ-HW-02	Hardware	Comunicacion	debe ser capaz de conectarse a tecnologia 4G; mantener un bajo consumo; gran alcance de conectividad	HW	Alta	El sisetma debe tener una comunicación de largo alcance	FALSE
+REQ-HW-03	Hardware	Bateria	precisa una autonomia de 7 dias promedio para un correcto uso del dispositivo	HW	Media	Debe tener un tamaño apropiado, mas o menos a la par con el tamaño del micro	FALSE
+REQ-HW/FW-01	Hardware/Fimware	Rastreo/Ubicación	Ubicacion precisa en un rango ±10m	HW/FW	Alta	No se necesita una precisión mayor,  al ser un radio en el que se va a buscar una persona	FALSE
+REQ-HW/FW-02	Fimware	Pulsador SOS	Pulsador que activa la baliza SOS	HW/FW	Alta	Interrumpe el modo de ahorro de energía para enviar una alerta y los datos actuales	FALSE
