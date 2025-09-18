@@ -1,15 +1,21 @@
 #include <Arduino.h>
-#include <SoftwareSerial.h>
 #include <MAX30105.h>
+#include <GPS.h>
 #include <heartRate.h>
 #include <Wire.h>
-#define RX_D PIN_006
-#define TX_D PIN_008
+#define RX_1 PIN_006
+#define TX_1 PIN_008
+#define RX_2 PIN_010
+#define TX_2 PIN_011
 #define PING "AT+CNUM"
 #define MODO_TEXTO "AT+CMGF=1"
 #define AGENDAR_NUM "AT+CMGS=\"+5493515554940\""
 
 int promediarLatidos(MAX30105 obj);
+
+gpsSerial mySerial(RX_2, TX_2);
+
+String url = mySerial.getUrl();ú
 
 SoftwareSerial mySerial1(RX_D, TX_D);
 
