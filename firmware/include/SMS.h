@@ -5,13 +5,14 @@
 
 class smsSerial{
     private:
-        SoftwareSerial *uart;
+        SoftwareSerial* uart;
     public:
         smsSerial(short rx, short tx, int baud);
         ~smsSerial();
-        void textMode(short enable);
-        void sendMessage(String number, String message);
+        void textMode(short toggle);
         String getNumber();
+        void sendMessage(String number, String message);
+        
 }; 
 
 #endif

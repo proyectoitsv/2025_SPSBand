@@ -1,4 +1,4 @@
-#include <SMS.h>
+#include "SMS.h"
 
 #define GETNUM "AT+CNUM"
 #define TEXTMODE "AT+CMGF="
@@ -23,14 +23,14 @@ String smsSerial::getNumber(){
   String rtrn = "";
   uart->println(GETNUM);
   while(uart->available()){
-    String+= uart->read();
+    rtrn+= uart->read();
   }
   return rtrn;
 }
 
 void smsSerial::sendMessage(String number, String message){
   uart->print(SEND);
-  uart->println(number);
+  uart->println("\""+ number+ "\"");
   uart->print(message);
   uart->write(26);
 }
