@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <SoftwareSerial.h>
+#include <SMS.h>
 #include <MAX30105.h>
 #include <heartRate.h>
 #include <Wire.h>
@@ -11,8 +11,8 @@
 
 int promediarLatidos(MAX30105 obj);
 
-SoftwareSerial mySerial1(RX_D, TX_D);
-
+smsSerial mySerial(RX_D, TX_D, 19200);
+mySerial.getNum();
 MAX30105 particleSensor;
 
 const byte RATE_SIZE = 4; //Cantidad de valores para promediar

@@ -1,35 +1,36 @@
-#include <Arduino.h>
-#include <SoftwareSerial.h>
-#define RX_D PIN_006
-#define TX_D PIN_008
-#define PING "AT+CNUM"
-#define MODO_TEXTO "AT+CMGF=1"
-#define AGENDAR_NUM "AT+CMGS=\"+5493515554940\""
+#include <SMS.h>
 
-SoftwareSerial mySerial1(RX_D, TX_D);
+#define GETNUM "AT+CNUM"
+#define TEXTMODE "AT+CMGF="
+#define SEND "AT+CMGS="
 
-void setup(){
-    Serial.begin(115200);
-    mySerial1.begin(19200);
-    delay(3000);
-    //mySerial1.println(MODO_TEXTO);
-
+smsSerial::smsSerial(short rx, short tx, int baud){
+  uart = new SoftwareSerial(rx, tx);
+  uart->begin(baud);
+}
+smsSerial::~smsSerial(){
+  delete uart;
 }
 
-void loop(){  
-  mySerial1.println(PING);
-    mySerial1.println(MODO_TEXTO);
-    delay(500);
-    mySerial1.println(AGENDAR_NUM);
-    mySerial1.print("Mensaje desde el módem SIM800L");
-    delay(2000);
-    mySerial1.write(26);
-    
-    delay(500);
-    while (mySerial1.available()) { //Imprimir cada caracter recibido en el micro
-    char c = mySerial1.read();
-    Serial.print(c);
-  }
-  delay(20000);
+void smsSerial::textMode(short toggle){
+  char enable = (toggle = 0)?('0'):('1'); 
+  uart->println(TEXTMODE);
+  uart->write(enable);
+  uart->println(); 
+}
 
+String smsSerial::getNumber(){
+  String rtrn = "";
+  uart->println(GETNUM);
+  while(uart->available()){
+    String+= uart->read();
+  }
+  return rtrn;
+}
+
+void smsSerial::sendMessage(String number, String message){
+  uart->print(SEND);
+  uart->println(number);
+  uart->print(message);
+  uart->write(26);
 }
