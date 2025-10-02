@@ -1,12 +1,13 @@
 #include "SMS.h"
 #include <Oximetro.h>
 
-#define NUMERO "+549351xxxxxxx"
-smsSerial mySerial(PIN_006, PIN_008, 19200);
+#define NUMERO "+5493515554940"
+smsSerial *mySerial = nullptr;
 
 void setup()
 {
   Serial.begin(115200);
+  mySerial = new(smsSerial(PIN_006, PIN_008, 19200));
   Serial.println("Initializing...");
   
   if(i2cBegin(20, 0) != 0){
@@ -23,9 +24,9 @@ void loop(){
   int beatAvg = getBeatAvg(4);
   Serial.println(beatAvg);
   if(millis()-tStart > 10000){
-    mySerial.textMode(1);
-    mySerial.sendMessage(NUMERO, (String)beatAvg);
-    mySerial.textMode(0);
+    mySerial->textMode(1);
+    mySerial->sendMessage(NUMERO, (String)beatAvg);
+    mySerial->textMode(0);
     tStart = 0;
   }
 
