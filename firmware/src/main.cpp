@@ -1,4 +1,8 @@
 #include <Oximetro.h>
+#include <SMS.h>
+#define RX_D PIN_006
+#define TX_D PIN_008
+
 
 void setup()
 {
