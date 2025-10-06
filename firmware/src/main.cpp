@@ -10,13 +10,10 @@ gpsSerial mySerial(RX_2, TX_2);
 
 String url = mySerial.getUrl();ú
 
-#define NUMERO "+5493515554940"
-smsSerial *mySerial = nullptr;
 
 void setup()
 {
   Serial.begin(115200);
-  mySerial = new(smsSerial(PIN_006, PIN_008, 19200));
   Serial.println("Initializing...");
   
   if(i2cBegin(20, 0) != 0){
@@ -27,17 +24,8 @@ void setup()
 }
 
 void loop(){  
-  long tStart = 0;
-  tStart = (tStart==0)?millis():tStart;
-  Serial.println("Hold the device in your wrist/finger for 10 seconds. It may take some time to calibrate");
-  int beatAvg = getBeatAvg(4);
-  Serial.println(beatAvg);
-  if(millis()-tStart > 10000){
-    mySerial->textMode(1);
-    mySerial->sendMessage(NUMERO, (String)beatAvg);
-    mySerial->textMode(0);
-    tStart = 0;
-  }
+  Serial.println("Hold the device in your wrist/finger for 10 seconds. May take some time to calibrate");
+  Serial.println(getBeatAvg(10));
 
 }
 
