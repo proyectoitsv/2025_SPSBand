@@ -1,7 +1,7 @@
 //MAX30102 andando mas preciso 
 
 
-#include <Oximetro.h>
+#include "Oximetro.h"
 
 
 

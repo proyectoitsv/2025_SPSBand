@@ -1,4 +1,4 @@
-#include <GPS.h>
+#include "GPS.h"
 
 gpsSerial::gpsSerial(short Rx, short Tx){
     uart = new SoftwareSerial(Rx, Tx);
