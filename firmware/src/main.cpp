@@ -1,7 +1,14 @@
-#include <Oximetro.h>
-#include <SMS.h>
+#include "Oximetro.h"
+#include "SMS.h"
+#include "GPS.h"
+
 #define RX_D PIN_006
 #define TX_D PIN_008
+#define RX_2 PIN_010
+#define TX_2 PIN_011
+gpsSerial mySerial(RX_2, TX_2);
+
+String url = mySerial.getUrl();ú
 
 
 void setup()
