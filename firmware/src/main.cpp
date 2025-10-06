@@ -1,5 +1,5 @@
 #include "SMS.h"
-#include <Oximetro.h>
+#include "Oximetro.h"
 
 #define NUMERO "+5493515554940"
 smsSerial *mySerial = nullptr;
@@ -20,7 +20,7 @@ void setup()
 void loop(){  
   long tStart = 0;
   tStart = (tStart==0)?millis():tStart;
-  Serial.println("Hold the device in your wrist/finger for 10 seconds. May take some time to calibrate");
+  Serial.println("Hold the device in your wrist/finger for 10 seconds. It may take some time to calibrate");
   int beatAvg = getBeatAvg(4);
   Serial.println(beatAvg);
   if(millis()-tStart > 10000){
