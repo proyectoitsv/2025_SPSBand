@@ -4,7 +4,7 @@
 #define TEXTMODE "AT+CMGF="
 #define SEND "AT+CMGS="
 
-smsSerial::smsSerial(short rx, short tx, int baud){
+smsSerial::smsSerial(short rx, short tx, int baud = 9600){
   uart = new SoftwareSerial(rx, tx);
   uart->begin(baud);
 }
