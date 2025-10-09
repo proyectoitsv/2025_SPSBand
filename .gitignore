@@ -3,3 +3,4 @@
 .vscode/*.json
 .vscode/launch.json
 .vscode/ipch
+.vscode/
