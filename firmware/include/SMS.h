@@ -2,6 +2,7 @@
 #define SMSSERIAL_H
 
 #include <SoftwareSerial.h>
+#include "Arduino.h"
 
 class smsSerial{
     private:
@@ -12,6 +13,7 @@ class smsSerial{
         void textMode(short enable);
         void sendMessage(String number, String message);
         String getNumber();
+        String waitResponse(const int timeout = 3000);
 }; 
 
 #endif

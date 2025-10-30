@@ -12,7 +12,7 @@ gpsSerial *SerialGPS;
 smsSerial *SerialSMS;
 
 String url = SerialGPS.getUrl();
-long time0 =0;
+unsigned long time0 =0;
 
 void setup()
 {
@@ -25,13 +25,12 @@ void setup()
     while(1);
   }
   Serial.println("I2C detected");
-  time0 = millis();
 }
 
-void loop(){  
+void loop(){ 
+  time0 = millis(); 
   Serial.println("Mantené el dispositivo en tu muñeca o dedo durante al menos 10 segundos.");
   int beatAvg = getBeatAvg(10);
-  time0 = time;
   String location = SerialGPS.getUrl();
   String message = "Ritmo cardíaco: "+ (String)beatAvg+" BPM "+ "Ubicación: " + location;
   SerialSMS->textMode(1);
