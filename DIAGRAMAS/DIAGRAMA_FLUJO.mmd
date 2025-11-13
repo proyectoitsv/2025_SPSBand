@@ -1,27 +1,13 @@
-
-
 flowchart TD
-A[Inicio] --> B[Inicializar UART, GPS y Oximetro]
-B --> C[Configurar Módem SIM800L (AT comandos)]
-C --> D[Configurar Timer con interrupción cada 1s]
-D --> E[Loop principal]
-
-E --> F[Leer pulsaciones: getBeatAvg(0)]
-F --> G[Obtener ubicación GPS: serial2->getUrl(toggle0)]
-G --> H[Crear mensaje con pulsaciones + ubicación]
-H --> I[Enviar comando AT+CMGS]
-I --> J[Esperar respuesta '>']
-J --> K[Enviar mensaje y 0x1A]
-K --> L[Esperar respuesta 'OK' o 'ERROR']
-L --> M[Esperar 700 ms]
-M --> E
-
-subgraph Timer Handler
-N[Incrementar count]
-N --> O{count >= 3?}
-O -- Sí --> P[Cambiar valor de toggle0 (0 ↔ 1)]
-O -- No --> Q[Mantener estado]
-P --> R[Resetear count a 0]
-R --> S[Actualizar preMillisTimer0]
-Q --> S
-end
+A[Inicio] --> B[Configurar sensores y comunicación]
+B --> C[Esperar para comenzar medición]
+C --> D[Medir pulsaciones]
+D --> E[Obtener ubicación GPS]
+E --> F[Formar mensaje con datos]
+F --> G[Enviar datos al servidor o número registrado]
+G --> H{¿Envío exitoso?}
+H -- Sí --> I[Encender indicador de éxito]
+H -- No --> J[Reintentar envío]
+I --> K[Esperar próximo intervalo]
+J --> K
+K --> C
