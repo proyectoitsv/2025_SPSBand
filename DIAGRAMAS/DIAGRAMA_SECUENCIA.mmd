@@ -1,23 +1,5 @@
 
-<!--
- sequenceDiagram
-    actor Visitante
-    participant Pulsera
-    participant Servidor
-    actor "Personal del Parque"   
-    Visitante ->> Pulsera: Inicia recorrido (activa pulsera)
-    Pulsera ->> Servidor: Enviar datos (GPS, biométricos)
-    Servidor ->> "Personal del Parque": Actualiza monitoreo
-    
-    alt Alarma de emergencia
-        Visitante ->> Pulsera: Presiona botón de pánico
-        Pulsera ->> Servidor: Alerta de emergencia
-        Servidor ->> "Personal del Parque": Notificar emergencia
-    else Recorrido normal
-        Pulsera ->> Servidor: Enviar actualizaciones periódicas
-        Servidor ->> "Personal del Parque": Monitorear ubicación
-    end
--->
+ 
 
 sequenceDiagram
     participant Usuario
