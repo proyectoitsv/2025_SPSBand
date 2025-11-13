@@ -1,9 +1,20 @@
+
+
 stateDiagram-v2
-    [*] --> Apagada
-    Apagada --> Monitoreando : Encender pulsera
-    Monitoreando --> AlertaDesvio : Desvio detectado
-    Monitoreando --> AlertaInactividad : Inactividad detectada
-    Monitoreando --> ModoEmergencia : Boton de panico pulsado
-    AlertaDesvio --> Monitoreando : Ruta corregida
-    AlertaInactividad --> Monitoreando : Actividad reanudada
-    ModoEmergencia --> Apagada : Emergencia gestionada
+[*] --> Inicio
+
+Inicio --> Configuración : Encendido del dispositivo
+Configuración --> EsperandoMedición : Sensores y módulo de comunicación listos
+
+EsperandoMedición --> MidiendoPulsaciones : Se inicia una nueva lectura del oxímetro
+MidiendoPulsaciones --> ObteniendoUbicación : Se obtienen los datos del GPS
+ObteniendoUbicación --> EnviandoDatos : Se forma el mensaje con ubicación y pulsaciones
+EnviandoDatos --> EsperandoConfirmación : Se envía la información al servidor o número telefónico
+EsperandoConfirmación --> Confirmado : Respuesta recibida correctamente
+EsperandoConfirmación --> ErrorEnvio : Falla en el envío
+
+Confirmado --> EsperandoMedición : Espera hasta la próxima toma de datos
+ErrorEnvio --> Reintento : Intentar nuevo envío
+Reintento --> EsperandoMedición : Vuelve al ciclo normal
+
+EsperandoMedición --> [*] : Apagado o reinicio del sistema

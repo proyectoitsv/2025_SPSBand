@@ -1,16 +1,27 @@
+
+
 flowchart TD
-    A((Inicio)) --> B[Registro de visitante]
-    B --> C[Entrega de pulsera]
-    C --> D[Pulsera Encendida / Monitoreando]
-    D --> E{Desvío de ruta?}
-    E -- Sí --> F[Alerta de Desvío]
-    E -- No --> G{Inactividad prolongada?}
-    G -- Sí --> H[Alerta de Inactividad]
-    G -- No --> D
-    D --> I{Botón de pánico presionado?}
-    I -- Sí --> J[Alerta de Emergencia]
-    I -- No --> D
-    F --> K[Notificar Personal del Parque]
-    H --> K
-    J --> K
-    K --> L[Finalizar recorrido]
+A[Inicio] --> B[Inicializar UART, GPS y Oximetro]
+B --> C[Configurar Módem SIM800L (AT comandos)]
+C --> D[Configurar Timer con interrupción cada 1s]
+D --> E[Loop principal]
+
+E --> F[Leer pulsaciones: getBeatAvg(0)]
+F --> G[Obtener ubicación GPS: serial2->getUrl(toggle0)]
+G --> H[Crear mensaje con pulsaciones + ubicación]
+H --> I[Enviar comando AT+CMGS]
+I --> J[Esperar respuesta '>']
+J --> K[Enviar mensaje y 0x1A]
+K --> L[Esperar respuesta 'OK' o 'ERROR']
+L --> M[Esperar 700 ms]
+M --> E
+
+subgraph Timer Handler
+N[Incrementar count]
+N --> O{count >= 3?}
+O -- Sí --> P[Cambiar valor de toggle0 (0 ↔ 1)]
+O -- No --> Q[Mantener estado]
+P --> R[Resetear count a 0]
+R --> S[Actualizar preMillisTimer0]
+Q --> S
+end
