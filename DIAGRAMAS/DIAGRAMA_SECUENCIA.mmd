@@ -1,9 +1,10 @@
-sequenceDiagram
+
+<!--
+ sequenceDiagram
     actor Visitante
     participant Pulsera
     participant Servidor
-    actor "Personal del Parque"
-    
+    actor "Personal del Parque"   
     Visitante ->> Pulsera: Inicia recorrido (activa pulsera)
     Pulsera ->> Servidor: Enviar datos (GPS, biométricos)
     Servidor ->> "Personal del Parque": Actualiza monitoreo
@@ -16,3 +17,26 @@ sequenceDiagram
         Pulsera ->> Servidor: Enviar actualizaciones periódicas
         Servidor ->> "Personal del Parque": Monitorear ubicación
     end
+-->
+
+sequenceDiagram
+    participant Usuario
+    participant Pulsera
+    participant SensorOxímetro
+    participant GPS
+    participant MóduloComunicacion
+    participant Servidor
+
+    Usuario ->> Pulsera: Enciende el dispositivo
+    Pulsera ->> SensorOxímetro: Solicita medición de pulsaciones
+    SensorOxímetro -->> Pulsera: Envía valor de pulsaciones
+    Pulsera ->> GPS: Solicita ubicación actual
+    GPS -->> Pulsera: Envía coordenadas
+
+    Pulsera ->> MóduloComunicacion: Envía mensaje con datos (pulsaciones + ubicación)
+    MóduloComunicacion ->> Servidor: Transmite la información
+    Servidor -->> MóduloComunicacion: Confirma recepción
+    MóduloComunicacion -->> Pulsera: Confirmación recibida
+
+    Pulsera ->> Usuario: Indica con una luz que el envío fue exitoso
+    Pulsera --> Pulsera: Espera un intervalo antes del siguiente envío
