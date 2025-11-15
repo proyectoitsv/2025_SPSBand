@@ -18,12 +18,12 @@ MAX30105 particleSensor;
 const byte RATE_SIZE = 4; //Cantidad de valores para promediar
 byte rates[RATE_SIZE];
 byte rateSpot = 0;
-long lastBeat = 0;
+long lastBeat = 0;        // Tiempo del ultimo latido detectado
 
 float beatsPerMinute;
 int beatAvg;
 
-// Variables para muestreo cada 0,5 segundos
+// Variables para muestreo cada 0,5 segundos (Timer)
 unsigned long lastSampleTime = 0;
 const unsigned long sampleInterval = 500; // 500 ms
 
