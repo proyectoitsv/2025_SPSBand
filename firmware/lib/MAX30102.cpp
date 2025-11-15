@@ -5,10 +5,10 @@
 
 MAX30105 particleSensor;
 
-const byte RATE_SIZE = 4; //Cantidad de valores para promediar
-byte rates[RATE_SIZE];
-byte rateSpot = 0;
-long lastBeat = 0;
+const byte RATE_SIZE = 4; //Cantidad de valores que se van a guardar | tamaño 
+byte rates[RATE_SIZE]; //Creamos un arreglo de 4 posiciones 0,1,2,3
+byte rateSpot = 0;     //Empezamos por el arreglo 0
+long lastBeat = 0;    //Tiempo en millis del ultimo latido
 
 float beatsPerMinute;
 int beatAvg;
@@ -37,7 +37,7 @@ void setup()
 
 void loop()
 {
-  long irValue = particleSensor.getIR();
+  long irValue = particleSensor.getIR(); //Guarda los datos del sensor en irValue
 
   if (checkForBeat(irValue) == true)
   {
@@ -49,10 +49,10 @@ void loop()
     if (beatsPerMinute < 255 && beatsPerMinute > 20)
     {
       rates[rateSpot++] = (byte)beatsPerMinute;
-      rateSpot %= RATE_SIZE;
+      rateSpot %= RATE_SIZE;                      //Vuelve rateSpot a [0]
 
       beatAvg = 0;
-      for (byte x = 0; x < RATE_SIZE; x++)
+      for (byte x = 0; x < RATE_SIZE; x++) //Se saca el promedio
         beatAvg += rates[x];
       beatAvg /= RATE_SIZE;
     }
