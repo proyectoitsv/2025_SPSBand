@@ -92,7 +92,7 @@ int promediarLatidos(MAX30105 obj)
     if (beatsPerMinute < 255 && beatsPerMinute > 20)
     {
       rates[rateSpot++] = (byte)beatsPerMinute;
-      rateSpot %= RATE_SIZE;
+      rateSpot %= RATE_SIZE;      //Resetea el arreglo
 
       beatAvg = 0;
       for (byte x = 0; x < RATE_SIZE; x++)
