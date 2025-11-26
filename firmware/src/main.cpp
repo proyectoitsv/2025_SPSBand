@@ -1,143 +1,164 @@
-#include "Oximetro.h"
-#include "SMS.h"
+#include <Arduino.h>
+#include <SoftwareSerial.h>
+#include <NRF52TimerInterrupt.h>
 #include "GPS.h"
+#include "Oximetro.h"
 /*
-#define RX_D PIN_006
+AHGORA
+
+*/ 
+
+//Configuración de Timer
+#define TIMER_INTERRUPT_DEBUG         0
+#define _TIMERINTERRUPT_LOGLEVEL_     3
+#define TIMER0_INTERVAL_MS            1000
+#define TIMER0_DURATION_MS            5000
+
+//Pines de los módulos
 #define TX_D PIN_008
-#define RX_2 PIN_010
-#define TX_2 PIN_011
-#define NUMERO "+549351xxxxxxx" //Cambiar por mi número de teléfono
+#define RX_D PIN_006
+#define RX_2 PIN_029
+#define TX_2 PIN_031
+#define PB_U PIN_020
 
-gpsSerial *SerialGPS;
-smsSerial *SerialSMS;
+//Comandos AT
+#define PING            "AT+CNUM\r"
+#define MODEM_SETUP     "AT&K0;E1;V1\r"
+#define MODO_TEXTO      "AT+CMGF=1\r"
+#define MODO_TEXTO_OFF  "AT+CMGF=0\r"
+#define AGENDAR_NUM     "AT+CMGS=\"+5493512510726\"\r"
 
-String url = SerialGPS.getUrl();
-unsigned long time0 =0;
+SoftwareSerial mySerial1(RX_D, TX_D);
+String masage = "";
+volatile uint32_t preMillisTimer0 = 0;
+bool toggle0 = 0;
+void PBInterrupt();
+int randomBeatGenerator(int state);
+bool PBUIF = 0;   //flag del pulsador (Push Button (of the) User Interrupt Flag)
+
+NRF52Timer ITimer0(NRF_TIMER_1);
+volatile int count =0;
+
+void timerHandler();
+
+String readResponse(unsigned long timeout = 3000, String wanted = "OK\r\n");
+gpsSerial *serial2;
 
 void setup()
 {
-  Serial.begin(115200);
-  Serial.println("Initializing...");
-  SerialGPS = new gpsSerial(RX_2, TX_2);
-  SerialSMS = new smsSerial(RX_D, TX_D);
-  if(i2cBegin(20, 0) != 0){
-    Serial.println("Error");
-    while(1);
+  // Serial.begin(115200);
+  mySerial1.begin(19200);
+  serial2 = new gpsSerial(RX_2, TX_2);
+  delay(3000);
+  i2cBegin(0x0A,0x00);
+  mySerial1.print(MODO_TEXTO_OFF);
+  readResponse();
+
+  pinMode(PB_U, INPUT_PULLUP);
+
+  // Serial.println("Place your index finger on the sensor with steady pressure.");
+  mySerial1.print(MODEM_SETUP);
+  readResponse();
+  mySerial1.print(MODO_TEXTO);
+  readResponse();
+  
+  
+  // for(int i = 0; i<12; i++)
+  //   msg+= mySerial1.read();
+  // if(msg.endsWith("READY")){
+  //   mySerial1.println(MODO_TEXTO);
+  // }
+  // else{
+  //   Serial.println("SIM800L no esta listo");
+  // }
+  
+  ITimer0.attachInterruptInterval(TIMER0_INTERVAL_MS * 1000, timerHandler);
+  toggle0= 1;
+
+}
+
+void loop(){  
+  PBInterrupt();
+  if(digitalRead(PB_U) == 1){PBUIF = 1;}
+  int beatss = getBeatAvg(4);
+  if(PBUIF == 1 || beatss <60 || beats > 120){
+    masage = "[ALERTA] " + serial2->getUrl(toggle0)+" "+(String)beatss;
+    mySerial1.print(AGENDAR_NUM);
+    readResponse(3000, ">");
+    mySerial1.print(masage);
+    mySerial1.write(0x1A);
+    readResponse(10000);
   }
-  Serial.println("I2C detected");
+  
+  // mySerial1.print(MODO_TEXTO_OFF);
+  // readResponse();
+  // while(true){
+  //   if(mySerial1.available()!=0){
+  //     Serial.println("Myserial1 available");
+  //     break;
+  //   }
+  //   else if(millis()-ti0 > 3000){
+  //     Serial.println("Myserial1 not available");
+  //     break;
+  //   }
+  // }
+  // while (mySerial1.available()) { //Imprimir cada caracter recibido en el micro
+  //   char c = mySerial1.read();
+  //   Serial.print(c);
+  // }
+  delay(700);
+
 }
 
-void loop(){ 
-  time0 = millis(); 
-  Serial.println("Mantené el dispositivo en tu muñeca o dedo durante al menos 10 segundos.");
-  int beatAvg = getBeatAvg(10);
-  String location = SerialGPS.getUrl();
-  String message = "Ritmo cardíaco: "+ (String)beatAvg+" BPM "+ "Ubicación: " + location;
-  SerialSMS->textMode(1);
-  SerialSMS->sendMessage(NUMERO, message);
-  SerialSMS->textMode(0);
-  Serial.println("Mensaje enviado: \""+ message + "\"");
-}
+String readResponse(unsigned long timeout, String wanted) {
+  String resp = "";
+  unsigned long start = millis();
 
-*/
-
-#include "GPS.h"
-#include "Oximetro.h"
-#include "SMS.h"
-
-// ========== CONFIGURACIÓN DE PINES ==========
-// Pines para GPS (pines UART hardware)
-#define GPS_RX PIN_029   // Pin RX hardware del nRF52840
-#define GPS_TX PIN_031   // Pin TX hardware del nRF52840
-
-// Pines para Módem SMS
-#define SMS_RX PIN_006   // Pin D0 (P0.06)
-#define SMS_TX PIN_008   // Pin D1 (P0.08)
-
-// ========== CONFIGURACIÓN DE PARÁMETROS ==========
-String numeroDestino = "+5493512345678"; // CAMBIAR ESTE NÚMERO
-const unsigned long intervaloEnvio = 6000; // 6 segundos entre mensajes
-
-// ========== OBJETOS GLOBALES ==========
-gpsSerial* gps;
-smsSerial* modem;
-
-// ========== VARIABLES DE CONTROL ==========
-unsigned long ultimoEnvio = 0;
-
-void setup() {
-  Serial.begin(115200);
-  delay(1000);
-  Serial.println("Iniciando sistema...");
-  
-  // Inicializar GPS
-  Serial.println("Inicializando GPS...");
-  gps = new gpsSerial(GPS_RX, GPS_TX);
-  delay(1000);
-  
-  // Inicializar Módem SMS
-  Serial.println("Inicializando Modem SMS...");
-  modem = new smsSerial(SMS_RX, SMS_TX, 9600);
-  delay(2000);
-  
-  // Configurar modo texto para SMS
-  modem->textMode(1);
-  delay(1000);
-  
-  // Inicializar Oxímetro (I2C)
-  Serial.println("Inicializando Oximetro MAX30102...");
-  if (i2cBegin(0x1F, 0) != 0) {
-    Serial.println("ERROR: No se pudo inicializar el oximetro!");
-    while(1) {
-      delay(1000);
+  while (millis() - start < timeout) {
+    if (mySerial1.available()) {           
+      char c = mySerial1.read();           
+      resp += c;                           
+      if(resp.endsWith(wanted) || resp.endsWith("ERROR\r\n")) break; 
     }
   }
-  Serial.println("Oximetro inicializado correctamente");
-  
-  Serial.println("\n========== SISTEMA LISTO ==========");
-  Serial.println("Esperando datos del GPS...");
-  Serial.println("===================================\n");
+
+  return resp;
 }
 
-void loop() {
-  unsigned long tiempoActual = millis();
-  
-  // Verificar si es momento de enviar SMS
-  if (tiempoActual - ultimoEnvio >= intervaloEnvio) {
-    
-    Serial.println("\n--- Iniciando ciclo de medicion ---");
-    
-    // 1. Obtener ubicación GPS
-    Serial.println("Obteniendo ubicacion GPS...");
-    String ubicacion = gps->getUrl();
-    Serial.print("Ubicacion: ");
-    Serial.println(ubicacion);
-    
-    // 2. Obtener BPM del oxímetro
-    Serial.println("Midiendo frecuencia cardiaca (10 segundos)...");
-    int bpm = getBeatAvg(4); // Promedio de 4 valores
-    Serial.print("BPM: ");
-    Serial.println(bpm);
-    
-    // 3. Construir mensaje
-    String mensaje = "Ubicacion: " + ubicacion + "\nBPM: " + String(bpm);
-    
-    Serial.println("\n--- Enviando SMS ---");
-    Serial.print("Destinatario: ");
-    Serial.println(numeroDestino);
-    Serial.print("Mensaje: ");
-    Serial.println(mensaje);
-    
-    // 4. Enviar SMS
-    modem->sendMessage(numeroDestino, mensaje);
-    
-    Serial.println("SMS enviado!");
-    Serial.println("--- Fin del ciclo ---\n");
-    
-    // Actualizar tiempo del último envío
-    ultimoEnvio = millis();
+void timerHandler(){
+  count++;
+  if(count>=5){
+    toggle0= (toggle0==0)?1:0;
+    count = 0; 
   }
   
-  // Pequeño delay para no saturar el procesador
-  delay(100);
+}
+
+void PBInterrupt(){
+  bool pbState = digitalRead(PB_U);
+  unsigned long pbStart = 0;
+  if(pbState == 0){
+    if(pbStart == 0){
+      pbStart = millis();
+    }
+    if(millis()-pbStart >=3000){
+      if(!PBUIF){
+        PBUIF = 0;
+      }
+    }
+  }
+  else{
+    if(pbStart !=0){
+      pbStart = 0;
+    }
+  }
+}
+
+int randomBeatGenerator(int state){
+  if (state == 0)
+    return(rand%(120-60+1)+60);
+  else if (state == 1)
+    return(rand%(60-20+1)+20);
+  else if (state == 2)
+    return(rand%(180-120+1)+120);
 }

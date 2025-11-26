@@ -10,6 +10,8 @@ smsSerial::smsSerial(short rx, short tx, int baud){
   uart->begin(baud);
   uart->print(CONFIGSET);
   waitResponse();
+  uart->print("AT+CMGF=0");
+  waitResponse();
 }
 smsSerial::~smsSerial(){
   delete uart;
@@ -19,7 +21,7 @@ void smsSerial::textMode(short toggle){
   char enable = (toggle = 0)?('0'):('1'); 
   uart->println(TEXTMODE);
   uart->write(enable);
-  uart->write("\r");
+  uart->write('\r');
   waitResponse(); 
 }
 
@@ -35,25 +37,23 @@ String smsSerial::getNumber(){
 void smsSerial::sendMessage(String number, String message){
   uart->print(SEND);
   uart->print("\""+ number+ "\"\r");
+  waitResponse(3000, ">");
   uart->print(message);
   uart->write(26);
-  waitResponse(5000);
+  waitResponse(10000);
 }
 
-String smsSerial::waitResponse(const int timeout){
-  unsigned long t0 = millis();
-  String response = "";
-  
-  while(millis-t0<timeout){
-    while(uart->available()){
-      char c = uart->read();
-      response+= c;
-      if(response.endsWith("\r\nOK\r\n")||response.endsWith("\r\nERROR\r\n")){
-        return response;
-      } 
+String smsSerial::waitResponse(const unsigned long timeout, const String wanted){
+  String resp = "";
+  unsigned long start = millis();
+
+  while (millis() - start < timeout) {
+    if (mySerial1.available()) {           
+      char c = mySerial1.read();           
+      resp += c;                           
+      if(resp.endsWith(wanted) || resp.endsWith("ERROR\r\n")) break; 
     }
-    yield();
   }
 
-  return response;
+  return resp;
 }

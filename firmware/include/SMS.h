@@ -13,7 +13,7 @@ class smsSerial{
         void textMode(short enable);
         void sendMessage(String number, String message);
         String getNumber();
-        String waitResponse(const int timeout = 3000);
+        String waitResponse(const unsigned long timeout = 3000, const String wanted = "OK\r\n");
 }; 
 
 #endif

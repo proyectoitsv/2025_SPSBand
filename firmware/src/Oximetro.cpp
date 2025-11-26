@@ -32,23 +32,25 @@ int getBeatAvg(const int rateSize)
   byte rates[RATE_SIZE];
   byte rateSpot = 0;
   long lastBeat = 0;
+  int intervals = 0;
 
   float beatsPerMinute;
-  int beatAvg;
+  int beatAvg = 0;
   long t0 = millis();
   int rateNum = 0;
-  while(millis()-t0 < 10000){  
+  while(millis()-t0 < 3000){  
     long irValue = particleSensor.getIR();
     if (checkForBeat(irValue) == true)
     {
       long delta = millis() - lastBeat;
+      intervals+= delta;
       lastBeat = millis();
 
       beatsPerMinute = 60 / (delta / 1000.0);
-
+      beatAvg+= beatsPerMinute;
       rateNum++;
     }
   }
-  beatAvg= rateNum*6;
+  beatAvg= beatsPerMinute/rateNum;
   return beatAvg;
 }

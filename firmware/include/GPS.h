@@ -12,7 +12,7 @@ class gpsSerial{
   public:
     gpsSerial(short Rx, short Tx);
     ~gpsSerial();
-    String getUrl();
+    String getUrl(bool en);
 };
 
 #endif
