@@ -1,104 +1,164 @@
 #include <Arduino.h>
 #include <SoftwareSerial.h>
-#include <MAX30105.h>
-#include <heartRate.h>
-#include <Wire.h>
-#define RX_D PIN_006
-#define TX_D PIN_008
-#define PING "AT+CNUM"
-#define MODO_TEXTO "AT+CMGF=1"
-#define AGENDAR_NUM "AT+CMGS=\"+5493515554940\""
+#include <NRF52TimerInterrupt.h>
+#include "GPS.h"
+#include "Oximetro.h"
+/*
+AHGORA
 
-int promediarLatidos(MAX30105 obj);
+*/ 
+
+//Configuración de Timer
+#define TIMER_INTERRUPT_DEBUG         0
+#define _TIMERINTERRUPT_LOGLEVEL_     3
+#define TIMER0_INTERVAL_MS            1000
+#define TIMER0_DURATION_MS            5000
+
+//Pines de los módulos
+#define TX_D PIN_008
+#define RX_D PIN_006
+#define RX_2 PIN_029
+#define TX_2 PIN_031
+#define PB_U PIN_020
+
+//Comandos AT
+#define PING            "AT+CNUM\r"
+#define MODEM_SETUP     "AT&K0;E1;V1\r"
+#define MODO_TEXTO      "AT+CMGF=1\r"
+#define MODO_TEXTO_OFF  "AT+CMGF=0\r"
+#define AGENDAR_NUM     "AT+CMGS=\"+5493512510726\"\r"
 
 SoftwareSerial mySerial1(RX_D, TX_D);
+String masage = "";
+volatile uint32_t preMillisTimer0 = 0;
+bool toggle0 = 0;
+void PBInterrupt();
+int randomBeatGenerator(int state);
+bool PBUIF = 0;   //flag del pulsador (Push Button (of the) User Interrupt Flag)
 
-MAX30105 particleSensor;
+NRF52Timer ITimer0(NRF_TIMER_1);
+volatile int count =0;
 
-const byte RATE_SIZE = 4; //Cantidad de valores para promediar
-byte rates[RATE_SIZE];
-byte rateSpot = 0;
-long lastBeat = 0;        // Tiempo del ultimo latido detectado
+void timerHandler();
 
-float beatsPerMinute;
-int beatAvg;
-
-// Variables para muestreo cada 0,5 segundos (Timer)
-unsigned long lastSampleTime = 0;
-const unsigned long sampleInterval = 500; // 500 ms
+String readResponse(unsigned long timeout = 3000, String wanted = "OK\r\n");
+gpsSerial *serial2;
 
 void setup()
 {
-  Serial.begin(115200);
-  Serial.println("Initializing...");
+  // Serial.begin(115200);
   mySerial1.begin(19200);
+  serial2 = new gpsSerial(RX_2, TX_2);
+  delay(3000);
+  i2cBegin(0x0A,0x00);
+  mySerial1.print(MODO_TEXTO_OFF);
+  readResponse();
 
-  if (!particleSensor.begin(Wire, I2C_SPEED_FAST))
-  {
-    Serial.println("MAX30102 was not found. Please check wiring/power.");
-    while (1);
-  }
-  
-  Serial.println("Place your index finger on the sensor with steady pressure.");
+  pinMode(PB_U, INPUT_PULLUP);
 
-  particleSensor.setup();
-  particleSensor.setPulseAmplitudeRed(0x0A);
-  particleSensor.setPulseAmplitudeGreen(0);
+  // Serial.println("Place your index finger on the sensor with steady pressure.");
+  mySerial1.print(MODEM_SETUP);
+  readResponse();
+  mySerial1.print(MODO_TEXTO);
+  readResponse();
   
-  String msg = "";
-  for(int i = 0; i<12; i++)
-    msg+= mySerial1.read();
-  if(msg.endsWith("READY")){
-    mySerial1.println(MODO_TEXTO);
-  }
-  else{
-    Serial.println("SIM800L no esta listo");
-  }
+  
+  // for(int i = 0; i<12; i++)
+  //   msg+= mySerial1.read();
+  // if(msg.endsWith("READY")){
+  //   mySerial1.println(MODO_TEXTO);
+  // }
+  // else{
+  //   Serial.println("SIM800L no esta listo");
+  // }
+  
+  ITimer0.attachInterruptInterval(TIMER0_INTERVAL_MS * 1000, timerHandler);
+  toggle0= 1;
 
 }
 
 void loop(){  
-  int promedioBPM = promediarLatidos(particleSensor);
-
-  delay(500);
-  mySerial1.println(AGENDAR_NUM);
-  mySerial1.print("INFORMACIÓN EN TIEMPO REAL DEL USUARIO ");
-  mySerial1.print("Ritmo Cardíaco: ");
-  mySerial1.print(promedioBPM);
-  mySerial1.print(" BPM"); 
-  delay(2000);
-  mySerial1.write(26);
-    
-  delay(500);
-  while (mySerial1.available()) { //Imprimir cada caracter recibido en el micro
-    char c = mySerial1.read();
-    Serial.print(c);
+  PBInterrupt();
+  if(digitalRead(PB_U) == 1){PBUIF = 1;}
+  int beatss = getBeatAvg(4);
+  if(PBUIF == 1 || beatss <60 || beats > 120){
+    masage = "[ALERTA] " + serial2->getUrl(toggle0)+" "+(String)beatss;
+    mySerial1.print(AGENDAR_NUM);
+    readResponse(3000, ">");
+    mySerial1.print(masage);
+    mySerial1.write(0x1A);
+    readResponse(10000);
   }
-  delay(3000);
+  
+  // mySerial1.print(MODO_TEXTO_OFF);
+  // readResponse();
+  // while(true){
+  //   if(mySerial1.available()!=0){
+  //     Serial.println("Myserial1 available");
+  //     break;
+  //   }
+  //   else if(millis()-ti0 > 3000){
+  //     Serial.println("Myserial1 not available");
+  //     break;
+  //   }
+  // }
+  // while (mySerial1.available()) { //Imprimir cada caracter recibido en el micro
+  //   char c = mySerial1.read();
+  //   Serial.print(c);
+  // }
+  delay(700);
 
 }
 
-int promediarLatidos(MAX30105 obj)
-{
-  long irValue = obj.getIR();
+String readResponse(unsigned long timeout, String wanted) {
+  String resp = "";
+  unsigned long start = millis();
 
-  if (checkForBeat(irValue) == true)
-  {
-    long delta = millis() - lastBeat;
-    lastBeat = millis();
-
-    beatsPerMinute = 60 / (delta / 1000.0);
-
-    if (beatsPerMinute < 255 && beatsPerMinute > 20)
-    {
-      rates[rateSpot++] = (byte)beatsPerMinute;
-      rateSpot %= RATE_SIZE;      //Resetea el arreglo
-
-      beatAvg = 0;
-      for (byte x = 0; x < RATE_SIZE; x++)
-        beatAvg += rates[x];
-      beatAvg /= RATE_SIZE;
+  while (millis() - start < timeout) {
+    if (mySerial1.available()) {           
+      char c = mySerial1.read();           
+      resp += c;                           
+      if(resp.endsWith(wanted) || resp.endsWith("ERROR\r\n")) break; 
     }
   }
-  return beatAvg;
+
+  return resp;
+}
+
+void timerHandler(){
+  count++;
+  if(count>=5){
+    toggle0= (toggle0==0)?1:0;
+    count = 0; 
+  }
+  
+}
+
+void PBInterrupt(){
+  bool pbState = digitalRead(PB_U);
+  unsigned long pbStart = 0;
+  if(pbState == 0){
+    if(pbStart == 0){
+      pbStart = millis();
+    }
+    if(millis()-pbStart >=3000){
+      if(!PBUIF){
+        PBUIF = 0;
+      }
+    }
+  }
+  else{
+    if(pbStart !=0){
+      pbStart = 0;
+    }
+  }
+}
+
+int randomBeatGenerator(int state){
+  if (state == 0)
+    return(rand%(120-60+1)+60);
+  else if (state == 1)
+    return(rand%(60-20+1)+20);
+  else if (state == 2)
+    return(rand%(180-120+1)+120);
 }
