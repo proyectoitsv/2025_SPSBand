@@ -48,8 +48,8 @@ String smsSerial::waitResponse(const unsigned long timeout, const String wanted)
   unsigned long start = millis();
 
   while (millis() - start < timeout) {
-    if (mySerial1.available()) {           
-      char c = mySerial1.read();           
+    if (uart->available()) {           
+      char c = uart->read();           
       resp += c;                           
       if(resp.endsWith(wanted) || resp.endsWith("ERROR\r\n")) break; 
     }

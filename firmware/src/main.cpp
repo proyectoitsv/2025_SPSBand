@@ -15,8 +15,8 @@ AHGORA
 #define TIMER0_DURATION_MS            5000
 
 //Pines de los módulos
-#define TX_D PIN_008
-#define RX_D PIN_006
+#define TX_D PIN_006
+#define RX_D PIN_008
 #define RX_2 PIN_029
 #define TX_2 PIN_031
 #define PB_U PIN_020
@@ -26,7 +26,7 @@ AHGORA
 #define MODEM_SETUP     "AT&K0;E1;V1\r"
 #define MODO_TEXTO      "AT+CMGF=1\r"
 #define MODO_TEXTO_OFF  "AT+CMGF=0\r"
-#define AGENDAR_NUM     "AT+CMGS=\"+5493512510726\"\r"
+#define AGENDAR_NUM     "AT+CMGS=\"+5493513984409\"\r"
 
 SoftwareSerial mySerial1(RX_D, TX_D);
 String masage = "";
@@ -47,10 +47,10 @@ gpsSerial *serial2;
 void setup()
 {
   // Serial.begin(115200);
-  mySerial1.begin(19200);
+  mySerial1.begin(115200);
   serial2 = new gpsSerial(RX_2, TX_2);
   delay(3000);
-  i2cBegin(0x0A,0x00);
+  // i2cBegin(0x0A,0x00);
   mySerial1.print(MODO_TEXTO_OFF);
   readResponse();
 
@@ -79,17 +79,36 @@ void setup()
 
 void loop(){  
   PBInterrupt();
-  if(digitalRead(PB_U) == 1){PBUIF = 1;}
-  int beatss = getBeatAvg(4);
-  if(PBUIF == 1 || beatss <60 || beats > 120){
-    masage = "[ALERTA] " + serial2->getUrl(toggle0)+" "+(String)beatss;
-    mySerial1.print(AGENDAR_NUM);
-    readResponse(3000, ">");
-    mySerial1.print(masage);
-    mySerial1.write(0x1A);
-    readResponse(10000);
-  }
+  int beatss = randomBeatGenerator(2);
+  masage = serial2->getUrl(1)+" "+(String)beatss;
   
+  if(PBUIF == 1 ){
+    masage+= " ALERTA DE PANICO ";
+  }
+  else if(beatss<60){
+    masage+= " ALERTA BRADICARDIA ";
+  }
+  else if(beatss>120){
+    masage+= " ALERTA TAQUICARDIA ";
+  }
+  mySerial1.print("AT+CSQ?\r");
+  if(readResponse().indexOf("99,99") == -1){
+    mySerial1.print("AT+CREG?\r");
+    String resp =readResponse();
+    if(resp.indexOf(",1") != -1){
+      mySerial1.print(AGENDAR_NUM);
+      readResponse(3000, ">");
+      mySerial1.print(masage);
+      mySerial1.write(0x1A);
+      readResponse(10000);
+    }
+    else if(resp.indexOf(",1") == -1){
+      mySerial1.print("DEBUG: SIN REGISTRO EN RED\r");
+    }
+  }
+  else{
+    mySerial1.print("DEBUG: SIN SEÑAL\r");
+  }
   // mySerial1.print(MODO_TEXTO_OFF);
   // readResponse();
   // while(true){
@@ -106,7 +125,7 @@ void loop(){
   //   char c = mySerial1.read();
   //   Serial.print(c);
   // }
-  delay(700);
+  delay(100);
 
 }
 
@@ -134,31 +153,57 @@ void timerHandler(){
   
 }
 
-void PBInterrupt(){
-  bool pbState = digitalRead(PB_U);
-  unsigned long pbStart = 0;
-  if(pbState == 0){
-    if(pbStart == 0){
-      pbStart = millis();
-    }
-    if(millis()-pbStart >=3000){
-      if(!PBUIF){
-        PBUIF = 0;
-      }
+// void PBInterrupt(){
+//   bool pbState = digitalRead(PB_U);
+//   unsigned long pbStart = 0;
+//   if(pbState == 0){
+//     if(pbStart == 0){
+//       pbStart = millis();
+//     }
+//     if(millis()-pbStart >=3000){
+//       if(!PBUIF){
+//         PBUIF = 0;
+//       }
+//     }
+//   }
+//   else{
+//     if(pbStart !=0){
+//       pbStart = 0;
+//     }
+//   }
+// }
+void PBInterrupt() {
+  static unsigned long pbStart = 0;
+  static bool lastState = 1;
+  bool pbState = digitalRead(PB_U);   // 1 = suelto, 0 = presionado
+
+  // -----------------------------
+  // Detectar flanco de bajada (TOQUE)
+  // -----------------------------
+  if (lastState == 1 && pbState == 0) {
+    PBUIF = 1;              // TOQUE → activa flag
+    pbStart = millis();     // empieza medir retención
+  }
+
+  // -----------------------------
+  // Detectar si lo mantiene 3s
+  // -----------------------------
+  if (pbState == 0) {
+    if (millis() - pbStart >= 3000) {
+      PBUIF = 0;            // mantuvo el botón → desactiva flag
     }
   }
-  else{
-    if(pbStart !=0){
-      pbStart = 0;
-    }
-  }
+
+  // -----------------------------
+  lastState = pbState;
 }
+
 
 int randomBeatGenerator(int state){
   if (state == 0)
-    return(rand%(120-60+1)+60);
+    return(rand()%(120-60+1)+60);
   else if (state == 1)
-    return(rand%(60-20+1)+20);
+    return(rand()%(60-20+1)+20);
   else if (state == 2)
-    return(rand%(180-120+1)+120);
+    return(rand()%(180-120+1)+120);
 }
