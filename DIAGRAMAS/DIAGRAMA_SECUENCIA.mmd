@@ -1,24 +1,44 @@
-
- 
-
 sequenceDiagram
-    participant Usuario
-    participant Pulsera
-    participant SensorOxímetro
-    participant GPS
-    participant MóduloComunicacion
-    participant Servidor
+    participant Sistema
+    participant Boton
+    participant Sensor
+    participant Comunicacion
 
-    Usuario ->> Pulsera: Enciende el dispositivo
-    Pulsera ->> SensorOxímetro: Solicita medición de pulsaciones
-    SensorOxímetro -->> Pulsera: Envía valor de pulsaciones
-    Pulsera ->> GPS: Solicita ubicación actual
-    GPS -->> Pulsera: Envía coordenadas
+    Sistema->>Boton: Leer estado
+    Boton-->>Sistema: Respuesta
 
-    Pulsera ->> MóduloComunicacion: Envía mensaje con datos (pulsaciones + ubicación)
-    MóduloComunicacion ->> Servidor: Transmite la información
-    Servidor -->> MóduloComunicacion: Confirma recepción
-    MóduloComunicacion -->> Pulsera: Confirmación recibida
+    Sistema->>Sensor: Leer ubicación
+    Sensor-->>Sistema: Datos
 
-    Pulsera ->> Usuario: Indica con una luz que el envío fue exitoso
-    Pulsera --> Pulsera: Espera un intervalo antes del siguiente envío
+    Sistema->>Sensor: Leer frecuencia cardíaca
+    Sensor-->>Sistema: Valor
+
+    alt Botón tocado
+        Sistema->>Sistema: Activar alerta de pánico
+    else Frecuencia baja
+        Sistema->>Sistema: Activar alerta de bradicardia
+    else Frecuencia alta
+        Sistema->>Sistema: Activar alerta de taquicardia
+    else
+        Sistema->>Sistema: Sin alerta
+    end
+
+    Sistema->>Comunicacion: Consultar señal
+    Comunicacion-->>Sistema: Resultado señal
+
+    alt Señal válida
+        Sistema->>Comunicacion: Consultar registro en red
+        Comunicacion-->>Sistema: Resultado registro
+
+        alt Registrado Y alerta activa
+            Sistema->>Comunicacion: Enviar mensaje
+            Comunicacion-->>Sistema: Confirmación
+        else
+            Sistema->>Sistema: No enviar (falta registro o no hay alerta)
+        end
+
+    else
+        Sistema->>Sistema: Sin señal, no enviar
+    end
+
+    Sistema->>Sistema: Fin del ciclo

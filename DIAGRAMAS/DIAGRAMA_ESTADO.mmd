@@ -1,20 +1,19 @@
-
-
 stateDiagram-v2
-[*] --> Inicio
+    direction LR
+    [*] --> Normal
 
-Inicio --> Configuración : Encendido del dispositivo
-Configuración --> EsperandoMedición : Sensores y módulo de comunicación listos
+    Normal --> Panico : Botón tocado
+    Panico --> Normal : Botón sostenido 3s
 
-EsperandoMedición --> MidiendoPulsaciones : Se inicia una nueva lectura del oxímetro
-MidiendoPulsaciones --> ObteniendoUbicación : Se obtienen los datos del GPS
-ObteniendoUbicación --> EnviandoDatos : Se forma el mensaje con ubicación y pulsaciones
-EnviandoDatos --> EsperandoConfirmación : Se envía la información al servidor o número telefónico
-EsperandoConfirmación --> Confirmado : Respuesta recibida correctamente
-EsperandoConfirmación --> ErrorEnvio : Falla en el envío
+    Normal --> Bradicardia : Frecuencia baja
+    Bradicardia --> Normal : Frecuencia normal
 
-Confirmado --> EsperandoMedición : Espera hasta la próxima toma de datos
-ErrorEnvio --> Reintento : Intentar nuevo envío
-Reintento --> EsperandoMedición : Vuelve al ciclo normal
+    Normal --> Taquicardia : Frecuencia alta
+    Taquicardia --> Normal : Frecuencia normal
 
-EsperandoMedición --> [*] : Apagado o reinicio del sistema
+    Panico --> Enviando : Registrado en red
+    Bradicardia --> Enviando : Registrado en red
+    Taquicardia --> Enviando : Registrado en red
+
+    Enviando --> Normal : Mensaje enviado
+

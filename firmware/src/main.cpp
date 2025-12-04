@@ -79,7 +79,7 @@ void setup()
 
 void loop(){  
   PBInterrupt();
-  int beatss = randomBeatGenerator(2);
+  int beatss = randomBeatGenerator(rand() % 3);
   masage = serial2->getUrl(1)+" "+(String)beatss;
   
   if(PBUIF == 1 ){
@@ -91,11 +91,12 @@ void loop(){
   else if(beatss>120){
     masage+= " ALERTA TAQUICARDIA ";
   }
+
   mySerial1.print("AT+CSQ?\r");
   if(readResponse().indexOf("99,99") == -1){
     mySerial1.print("AT+CREG?\r");
     String resp =readResponse();
-    if(resp.indexOf(",1") != -1){
+    if(resp.indexOf(",1") != -1 && masage.indexOf("ALERTA") != -1){
       mySerial1.print(AGENDAR_NUM);
       readResponse(3000, ">");
       mySerial1.print(masage);
@@ -175,26 +176,19 @@ void timerHandler(){
 void PBInterrupt() {
   static unsigned long pbStart = 0;
   static bool lastState = 1;
-  bool pbState = digitalRead(PB_U);   // 1 = suelto, 0 = presionado
-
-  // -----------------------------
-  // Detectar flanco de bajada (TOQUE)
-  // -----------------------------
+  bool pbState = digitalRead(PB_U);   
+  
   if (lastState == 1 && pbState == 0) {
-    PBUIF = 1;              // TOQUE → activa flag
-    pbStart = millis();     // empieza medir retención
+    PBUIF = 1;              
+    pbStart = millis();     
   }
 
-  // -----------------------------
-  // Detectar si lo mantiene 3s
-  // -----------------------------
   if (pbState == 0) {
     if (millis() - pbStart >= 3000) {
-      PBUIF = 0;            // mantuvo el botón → desactiva flag
+      PBUIF = 0;            
     }
   }
 
-  // -----------------------------
   lastState = pbState;
 }
 
