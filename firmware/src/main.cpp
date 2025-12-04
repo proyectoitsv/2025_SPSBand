@@ -52,7 +52,12 @@ void setup()
   delay(3000);
   // i2cBegin(0x0A,0x00);
   mySerial1.print(MODO_TEXTO_OFF);
-  readResponse();
+  if(readResponse().indexOf(">")!=-1){
+    mySerial1.print(0x1A);
+    readResponse(9000);
+    mySerial1.print(MODO_TEXTO_OFF);
+    readResponse();
+  }
 
   pinMode(PB_U, INPUT_PULLUP);
 
@@ -73,6 +78,7 @@ void setup()
   // }
   
   ITimer0.attachInterruptInterval(TIMER0_INTERVAL_MS * 1000, timerHandler);
+  attachInterrupt(digitalPinToInterrupt(PB_U), PBInterrupt, FALLING);
   toggle0= 1;
 
 }
@@ -85,10 +91,10 @@ void loop(){
   if(PBUIF == 1 ){
     masage+= " ALERTA DE PANICO ";
   }
-  else if(beatss<60){
+  if(beatss<60){
     masage+= " ALERTA BRADICARDIA ";
   }
-  else if(beatss>120){
+  if(beatss>120){
     masage+= " ALERTA TAQUICARDIA ";
   }
 
@@ -96,7 +102,7 @@ void loop(){
   if(readResponse().indexOf("99,99") == -1){
     mySerial1.print("AT+CREG?\r");
     String resp =readResponse();
-    if(resp.indexOf(",1") != -1 && masage.indexOf("ALERTA") != -1){
+    if(masage.indexOf("ALERTA") != -1){
       mySerial1.print(AGENDAR_NUM);
       readResponse(3000, ">");
       mySerial1.print(masage);
@@ -174,23 +180,18 @@ void timerHandler(){
 //   }
 // }
 void PBInterrupt() {
-  static unsigned long pbStart = 0;
-  static bool lastState = 1;
-  bool pbState = digitalRead(PB_U);   
-  
-  if (lastState == 1 && pbState == 0) {
-    PBUIF = 1;              
-    pbStart = millis();     
+  static unsigned long lastInterrupt = 0;
+  unsigned long now = millis();
+
+  // Debounce de 150 ms para evitar toggles repetidos por rebote
+  if (now - lastInterrupt > 150) {
+    PBUIF = !PBUIF;   // toggle
   }
 
-  if (pbState == 0) {
-    if (millis() - pbStart >= 3000) {
-      PBUIF = 0;            
-    }
-  }
-
-  lastState = pbState;
+  lastInterrupt = now;
 }
+
+
 
 
 int randomBeatGenerator(int state){
