@@ -26,7 +26,7 @@ AHGORA
 #define MODEM_SETUP     "AT&K0;E1;V1\r"
 #define MODO_TEXTO      "AT+CMGF=1\r"
 #define MODO_TEXTO_OFF  "AT+CMGF=0\r"
-#define AGENDAR_NUM     "AT+CMGS=\"+5493513984409\"\r"
+#define AGENDAR_NUM     "AT+CMGS=\"+5493515554940\"\r"
 
 SoftwareSerial mySerial1(RX_D, TX_D);
 String masage = "";
@@ -34,7 +34,7 @@ volatile uint32_t preMillisTimer0 = 0;
 bool toggle0 = 0;
 void PBInterrupt();
 int randomBeatGenerator(int state);
-bool PBUIF = 0;   //flag del pulsador (Push Button (of the) User Interrupt Flag)
+volatile bool PBUIF = 0;   //flag del pulsador (Push Button (of the) User Interrupt Flag)
 
 NRF52Timer ITimer0(NRF_TIMER_1);
 volatile int count =0;
@@ -59,7 +59,7 @@ void setup()
     readResponse();
   }
 
-  pinMode(PB_U, INPUT_PULLUP);
+  pinMode(PB_U, INPUT_PULLDOWN);
 
   // Serial.println("Place your index finger on the sensor with steady pressure.");
   mySerial1.print(MODEM_SETUP);
@@ -78,15 +78,14 @@ void setup()
   // }
   
   ITimer0.attachInterruptInterval(TIMER0_INTERVAL_MS * 1000, timerHandler);
-  attachInterrupt(digitalPinToInterrupt(PB_U), PBInterrupt, FALLING);
+  attachInterrupt(digitalPinToInterrupt(PB_U), PBInterrupt, RISING);
   toggle0= 1;
 
 }
 
 void loop(){  
-  PBInterrupt();
   int beatss = randomBeatGenerator(rand() % 3);
-  masage = serial2->getUrl(1)+" "+(String)beatss;
+  masage = serial2->getUrl(1)+" "+(String)beatss + " BPM";
   
   if(PBUIF == 1 ){
     masage+= " ALERTA DE PANICO ";
